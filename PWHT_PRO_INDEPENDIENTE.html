@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PWHT PRO - Cálculo por mm</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#09111e;color:#eef4ff}
+header{background:#13243b;border-bottom:1px solid #304967;padding:22px 16px}
+.wrap{max-width:1100px;margin:auto;padding:16px}h1{margin:0;font-size:26px}.sub{color:#aebdd2;margin-top:6px}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}.nav button,.secondary{background:#15253b;color:#dce9f9;border:1px solid #3a506d;border-radius:9px;padding:11px 14px;cursor:pointer}
+.nav button.active{background:#176cc0;border-color:#3c91e5}.section{display:none}.section.active{display:block}
+.card{background:#111d2d;border:1px solid #2d425d;border-radius:14px;padding:18px;margin-bottom:15px}
+h2{margin:0 0 10px;font-size:20px}h3{margin:20px 0 10px;font-size:16px;color:#bcd0e8}
+.note{color:#a9b9ce;font-size:13px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+label{display:block;color:#a9b9ce;font-size:12px;margin-bottom:5px}
+input{width:100%;padding:11px;border-radius:8px;border:1px solid #3c526e;background:#091422;color:white;font-size:15px}
+input:focus{outline:2px solid #236da9}
+.primary{margin-top:15px;background:#167bd3;color:#fff;border:0;border-radius:9px;padding:12px 18px;font-weight:bold;cursor:pointer}
+.secondary{margin-top:15px}
+.factor{background:#081522;border:1px solid #2d577a;border-radius:10px;padding:14px;margin-top:12px}
+.factor strong{font-size:20px;color:#79c6ff}
+.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-top:15px}
+.metric{background:#091523;border:1px solid #293e58;border-radius:10px;padding:12px}.metric span{display:block;color:#93a8c1;font-size:11px}.metric b{display:block;font-size:19px;margin-top:5px}
+.formula{font-family:monospace;background:#07101a;border-radius:9px;padding:12px;margin-top:12px;color:#c6e3ff;line-height:1.7}
+table{width:100%;border-collapse:collapse;margin-top:15px;font-size:13px}th,td{border-bottom:1px solid #2a3c52;padding:9px;text-align:left}th{color:#9db0c8}
+.err{color:#ff8585}.ok{color:#6ce0a0}
+footer{text-align:center;color:#71839b;font-size:11px;padding:20px}
+@media print{body{background:#fff;color:#111}.card{background:#fff;border:1px solid #aaa;box-shadow:none}.nav,button{display:none!important}.section{display:block!important}.metric{background:#f4f4f4;color:#111}.formula{background:#eee;color:#111}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>PWHT PRO — Cálculo directo por milímetros</h1>
+<div class="sub">Método de gráfica: <b>mm × 2.4 = minutos</b></div>
+</div></header>
+
+<div class="wrap">
+<div class="nav">
+<button class="active" onclick="show('grafica',this)">📏 Gráfica</button>
+<button onclick="show('pwht',this)">🔥 PWHT / Relevado</button>
+<button onclick="show('pre',this)">♨️ Precalentamiento</button>
+<button onclick="show('des',this)">💧 Deshidrogenado</button>
+</div>
+
+<section id="grafica" class="section active">
+<div class="card">
+<h2>Calculadora de cualquier tramo de gráfica</h2>
+<p class="note">Aquí no tienes que poner minutos de referencia. El valor predeterminado es <b>2.4 min/mm</b>, exactamente como en tu cálculo: 37.5 mm × 2.4 = 90 min.</p>
+<div class="factor">Factor de tiempo: <strong><input id="g_factor" type="number" step="0.01" value="2.4" style="width:110px;display:inline-block;padding:7px"></strong> min/mm</div>
+<div class="grid" style="margin-top:14px">
+<div><label>Milímetros de la gráfica</label><input id="gmm" type="number" step="0.01" placeholder="Ej. 37.5"></div>
+<div><label>Temperatura inicial °F (opcional)</label><input id="gt0" type="number" step="0.1" placeholder="Ej. 550"></div>
+<div><label>Temperatura final °F (opcional)</label><input id="gt1" type="number" step="0.1" placeholder="Ej. 1150"></div>
+</div>
+<button class="primary" onclick="calcGrafica()">CALCULAR</button>
+<button class="secondary" onclick="clearOut('gres')">LIMPIAR RESULTADO</button>
+<div id="gres"></div>
+</div>
+</section>
+
+<section id="pwht" class="section">
+<div class="card">
+<h2>🔥 PWHT / Relevado</h2>
+<p class="note">Módulo independiente. No necesitas introducir precalentamiento ni deshidrogenado.</p>
+<div class="factor">Factor de tiempo: <strong><input id="p_factor" type="number" step="0.01" value="2.4" style="width:110px;display:inline-block;padding:7px"></strong> min/mm</div>
+
+<h3>1 — Subida</h3>
+<div class="grid">
+<div><label>Temperatura inicial °F</label><input id="p_t0" type="number" value="550"></div>
+<div><label>Temperatura de sostenido °F</label><input id="p_t1" type="number" value="1150"></div>
+<div><label>mm de subida</label><input id="p_up" type="number" step="0.01" placeholder="Ej. 37.5"></div>
+</div>
+
+<h3>2 — Sostenido</h3>
+<div class="grid">
+<div><label>mm de sostenido</label><input id="p_hold" type="number" step="0.01" placeholder="Ej. 30"></div>
+</div>
+
+<h3>3 — Enfriamiento</h3>
+<div class="grid">
+<div><label>Temperatura final °F</label><input id="p_t2" type="number" value="590"></div>
+<div><label>mm de enfriamiento</label><input id="p_cool" type="number" step="0.01" placeholder="Ej. 37.5"></div>
+</div>
+
+<div class="grid" style="margin-top:12px">
+<div><label>Hora de inicio (opcional)</label><input id="p_start" type="time" value="18:15"></div>
+</div>
+<button class="primary" onclick="calcPWHT()">CALCULAR PWHT</button>
+<button class="secondary" onclick="clearOut('pres')">LIMPIAR RESULTADO</button>
+<div id="pres"></div>
+</div>
+</section>
+
+<section id="pre" class="section">
+<div class="card">
+<h2>♨️ Precalentamiento</h2>
+<p class="note">Módulo independiente. Solo úsalo cuando aplique.</p>
+<div class="factor">Factor: <strong><input id="pr_factor" type="number" step="0.01" value="2.4" style="width:110px;display:inline-block;padding:7px"></strong> min/mm</div>
+<div class="grid" style="margin-top:12px">
+<div><label>Temperatura inicial °F</label><input id="pr_t0" type="number"></div>
+<div><label>Temperatura objetivo °F</label><input id="pr_t1" type="number"></div>
+<div><label>mm de subida</label><input id="pr_mm" type="number" step="0.01"></div>
+<div><label>Hora de inicio (opcional)</label><input id="pr_start" type="time"></div>
+</div>
+<button class="primary" onclick="calcPre()">CALCULAR PRECALENTAMIENTO</button>
+<button class="secondary" onclick="clearOut('prres')">LIMPIAR RESULTADO</button>
+<div id="prres"></div>
+</div>
+</section>
+
+<section id="des" class="section">
+<div class="card">
+<h2>💧 Deshidrogenado</h2>
+<p class="note">Módulo independiente. No modifica ni exige datos del PWHT.</p>
+<div class="factor">Factor: <strong><input id="d_factor" type="number" step="0.01" value="2.4" style="width:110px;display:inline-block;padding:7px"></strong> min/mm</div>
+<div class="grid" style="margin-top:12px">
+<div><label>Temperatura inicial °F</label><input id="d_t0" type="number"></div>
+<div><label>Temperatura objetivo °F</label><input id="d_t1" type="number"></div>
+<div><label>mm de subida</label><input id="d_up" type="number" step="0.01"></div>
+<div><label>mm de sostenido</label><input id="d_hold" type="number" step="0.01"></div>
+<div><label>Hora de inicio (opcional)</label><input id="d_start" type="time"></div>
+</div>
+<button class="primary" onclick="calcDes()">CALCULAR DESHIDROGENADO</button>
+<button class="secondary" onclick="clearOut('dres')">LIMPIAR RESULTADO</button>
+<div id="dres"></div>
+</div>
+</section>
+
+<footer>Herramienta de cálculo. Los límites de temperatura, velocidad y sostenido deben verificarse contra el WPS/PQR, especificación del proyecto, material y código aplicable.</footer>
+</div>
+
+<script>
+function N(id){return parseFloat(document.getElementById(id).value)}
+function V(id){return document.getElementById(id).value}
+function F(x,d=2){return Number.isFinite(x)?x.toFixed(d):'—'}
+function timeMin(mm,factor){return mm*factor}
+function rate(t0,t1,min){return (t1-t0)/(min/60)}
+function addTime(s,min){
+ if(!s)return '—'; let [h,m]=s.split(':').map(Number), x=h*60+m+min;
+ x=((x%1440)+1440)%1440; return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0')
+}
+function Cto(c){return c*5/9}
+function metric(title,value){return `<div class="metric"><span>${title}</span><b>${value}</b></div>`}
+function show(id,b){
+ document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active')
+}
+function clearOut(id){document.getElementById(id).innerHTML=''}
+
+function calcGrafica(){
+ let mm=N('gmm'),f=N('g_factor'),t0=N('gt0'),t1=N('gt1');
+ if(!(mm>0&&f>0)){document.getElementById('gres').innerHTML='<p class="err">Introduce los mm de la gráfica. El factor debe ser mayor que cero.</p>';return}
+ let min=timeMin(mm,f),h=min/60, extra='';
+ if(Number.isFinite(t0)&&Number.isFinite(t1)){
+  let rf=rate(t0,t1,min); extra=metric('Velocidad °F/h',F(rf))+metric('Velocidad °C/h',F(rf*5/9));
+ }
+ document.getElementById('gres').innerHTML=`
+ <div class="formula">${F(mm)} mm × ${F(f)} min/mm = <b>${F(min)} min</b><br>${F(min)} min ÷ 60 = <b>${F(h,3)} h</b></div>
+ <div class="result">${metric('Tiempo',F(min)+' min')}${metric('Horas',F(h,3)+' h')}${extra}</div>`
+}
+
+function calcPWHT(){
+ let f=N('p_factor'),up=N('p_up'),hold=N('p_hold'),cool=N('p_cool'),t0=N('p_t0'),t1=N('p_t1'),t2=N('p_t2');
+ if(!(f>0&&up>0&&hold>=0&&cool>0&&[t0,t1,t2].every(Number.isFinite))){
+  document.getElementById('pres').innerHTML='<p class="err">Completa temperatura y los mm de subida, sostenido y enfriamiento.</p>';return
+ }
+ let a=timeMin(up,f), h=timeMin(hold,f), c=timeMin(cool,f);
+ let ru=rate(t0,t1,a), rc=rate(t1,t2,c);
+ let st=V('p_start')||'—', e1=addTime(st,a),e2=addTime(e1,h),e3=addTime(e2,c);
+ document.getElementById('pres').innerHTML=`
+ <div class="formula"><b>Fórmula utilizada en los tres tramos:</b><br>mm × ${F(f)} min/mm = tiempo exacto</div>
+ <div class="result">
+ ${metric('Subida',F(a)+' min')}
+ ${metric('Subida',F(ru)+' °F/h')}
+ ${metric('Subida',F(ru*5/9)+' °C/h')}
+ ${metric('Sostenido',F(h)+' min')}
+ ${metric('Enfriamiento',F(c)+' min')}
+ ${metric('Enfriamiento',F(rc)+' °F/h')}
+ ${metric('Enfriamiento',F(rc*5/9)+' °C/h')}
+ ${metric('Ciclo total',F(a+h+c)+' min')}
+ </div>
+ <table>
+ <tr><th>Etapa</th><th>mm</th><th>Tiempo</th><th>Inicio</th><th>Fin</th><th>°F/h</th><th>°C/h</th></tr>
+ <tr><td>Subida</td><td>${F(up)}</td><td>${F(a)} min</td><td>${st}</td><td>${e1}</td><td>${F(ru)}</td><td>${F(ru*5/9)}</td></tr>
+ <tr><td>Sostenido</td><td>${F(hold)}</td><td>${F(h)} min</td><td>${e1}</td><td>${e2}</td><td>—</td><td>—</td></tr>
+ <tr><td>Enfriamiento</td><td>${F(cool)}</td><td>${F(c)} min</td><td>${e2}</td><td>${e3}</td><td>${F(rc)}</td><td>${F(rc*5/9)}</td></tr>
+ </table>
+ <div class="formula">Fin del ciclo: <b>${e3}</b></div>`
+}
+
+function calcPre(){
+ let f=N('pr_factor'),mm=N('pr_mm'),t0=N('pr_t0'),t1=N('pr_t1');
+ if(!(f>0&&mm>0&&Number.isFinite(t0)&&Number.isFinite(t1))){document.getElementById('prres').innerHTML='<p class="err">Completa los datos.</p>';return}
+ let m=mm*f,r=rate(t0,t1,m),st=V('pr_start')||'—';
+ document.getElementById('prres').innerHTML=`<div class="result">${metric('Tiempo',F(m)+' min')}${metric('Velocidad °F/h',F(r))}${metric('Velocidad °C/h',F(r*5/9))}${metric('Inicio',st)}${metric('Fin',addTime(st,m))}</div><div class="formula">${F(mm)} mm × ${F(f)} = ${F(m)} min</div>`
+}
+function calcDes(){
+ let f=N('d_factor'),up=N('d_up'),hold=N('d_hold'),t0=N('d_t0'),t1=N('d_t1');
+ if(!(f>0&&up>0&&hold>=0&&Number.isFinite(t0)&&Number.isFinite(t1))){document.getElementById('dres').innerHTML='<p class="err">Completa los datos.</p>';return}
+ let a=up*f,h=hold*f,r=rate(t0,t1,a),st=V('d_start')||'—',e1=addTime(st,a),e2=addTime(e1,h);
+ document.getElementById('dres').innerHTML=`<div class="result">${metric('Subida',F(a)+' min')}${metric('Velocidad °F/h',F(r))}${metric('Velocidad °C/h',F(r*5/9))}${metric('Sostenido',F(h)+' min')}${metric('Fin',e2)}</div><div class="formula">${F(up)} mm × ${F(f)} = ${F(a)} min<br>${F(hold)} mm × ${F(f)} = ${F(h)} min</div>`
+}
+</script>
+</body>
+</html>
